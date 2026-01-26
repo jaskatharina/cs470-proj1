@@ -104,7 +104,7 @@ public:
         return newNode;
     }
 
-    Node* decreaseKey(Node* node, int newKey) {
+    void decreaseKey(Node* node, int newKey) {
 
         //remove subtree rooted at node
         if(node->prev == nullptr) {
