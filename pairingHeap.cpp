@@ -17,6 +17,10 @@ public:
     }
 };
 
+//nodes are less than or equal to their children, and a node can have any number of children
+//a parent only points to one of its children
+//children point to their adjacent siblings, or to their parent, in the case of the leftmost child
+
 class PairingHeap {
 public:
     Node* root = nullptr;
@@ -126,7 +130,8 @@ public:
         }
     }
     
-    //recursively merge root's children to find new min
+    //recursively merge the root's children after removing it
+    //merges the first two nodes in the list
     Node* mergePairs(Node* child) {
         if(isEmpty(child)) {
             return nullptr;
@@ -216,7 +221,7 @@ int main() {
 
     //testing params
     int n = 50;
-    int e = 3;
+    int e = 10;
     int lower_bound = 0;
     int upper_bound = 1000;
 
