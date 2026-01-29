@@ -148,7 +148,13 @@ public:
         }
     }
 
-    //curr should initially be the heap's root, parents should initially be empty
+
+    //this print function is kind of a mess, but it at least reveals the heap's structure
+    //each printed key with a slash on the line right below it is a parent
+    //the children of the leftmost parent will be printed first
+    //example: the fifth parent with a slash under it on a line has its children printed in the fifth group on the line below it
+
+    //parents should initially be empty
     void printHeap(vector<Node*> parents) {
 
         if(parents.size() == 0) { //initial call, prints root and recurses with root as only parent
@@ -163,27 +169,43 @@ public:
         }
         else { //recursive calls
             vector<Node*> new_parents;
+            string line = "";
+            string ptrs = "";
             for(int i = 0; i < parents.size(); i++) { //loop through parents
                 Node* curr = parents.at(i)->child;
                 while(!isEmpty(curr->next)) { //loop through all children of parent and print them
-                    cout << curr->key << " - ";
+                    
+                    int before = line.length();
+                    line += to_string(curr->key) + " - ";
+                    int diff = line.length() - before;
                     if(!isEmpty(curr->child)) {
+                        ptrs += "/";
+                        diff--;
                         new_parents.push_back(curr);
-                    } 
+                    }
+                    for(int j = 0; j < diff; j++) {
+                        ptrs += " ";
+                    }
                     curr = curr->next;
                 }
-                cout << curr->key << " | ";
+                int before = line.length();
+                line += to_string(curr->key) + " | ";
+                int diff = line.length() - before;
                 if(!isEmpty(curr->child)) {
-                    new_parents.push_back(curr);
+                    ptrs += "/";
+                    diff--;
+                    new_parents.push_back(curr);     
                 }
-                if(i == parents.size() - 1) { //print newline if at end of loop
-                    cout << "\n";
+                for(int j = 0; j < diff; j++) {
+                    ptrs += " ";
                 }
             }
+            cout << line << "\n";
             if(new_parents.size() == 0) { //base case, no more children to print
                 return;
             }
             else {
+                cout << ptrs << "\n";
                 printHeap(new_parents);
             }
         }
@@ -192,10 +214,10 @@ public:
 
 int main() {
 
-    int n = 10;
-    int e = 1;
+    int n = 50;
+    int e = 3;
     int lower_bound = 0;
-    int upper_bound = 100;
+    int upper_bound = 1000;
 
     //init random number gen for testing
     unsigned seed = chrono::system_clock::now().time_since_epoch().count();
