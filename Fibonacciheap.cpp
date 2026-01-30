@@ -6,6 +6,7 @@
 using namespace std;
 
 struct FibNode {
+    int num;
     int key;                                            // the actual stored value
     int degree;                                         // the degree of the node
     bool mark;                                          // is it a parent of child loss (true if TRUE)
