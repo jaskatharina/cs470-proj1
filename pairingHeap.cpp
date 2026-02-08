@@ -12,7 +12,8 @@ int main() {
 
     //testing params
     int n = 50;
-    int e = 10;
+    int e = 5;
+    int a = 10;
     int lower_bound = 0;
     int upper_bound = 1000;
 
@@ -32,8 +33,13 @@ int main() {
     for(int i = 0; i < e; i++) {
         Node* minNode = pHeap.extractMin();
         cout << "Extracted min: " << minNode->key << "\n";
+        pHeap.printHeap(parents);
+    }
+    for(int i = 0; i < a; i++) {
+        cout << "Inserted node: " << pHeap.insert(distrib(gen))->key << "\n";
+        pHeap.printHeap(parents);
     }
 
     
-    pHeap.printHeap(parents);
+    //pHeap.printHeap(parents);
 }
