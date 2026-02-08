@@ -112,17 +112,30 @@ public:
             std::cout << "Error: calling decreaseKey on root";
         }
         else {
+            Node* child = node->child;
+            //replace node with child, make next child the child's child
+            if(!isEmpty(child)) {
+                child->child = child->next;
+                child->prev = node->prev;
+                child->next = node->next;
+            }
             if(isLeftmostChild(node)) {
                 //prev refers to node's parent
-                node->prev->child = node->next;
+                node->prev->child = child;
             }
             else {
                 //prev refers to node's sibling
-                node->prev->next = node->next;
-            }  
+                node->prev->next = child;
+            }
+            if(!isEmpty(node->next)) {
+                node->next->prev = child;
+            }
+            node->prev = nullptr;
+            node->child = nullptr;
+            node->next = nullptr;
+            node->key = newKey;
+            this->root = meld(this->root, node);
         }
-        node->key = newKey;
-        this->root = meld(this->root, node);
     }
 
     Node* extractMin() {
