@@ -142,17 +142,23 @@ void DijkstraFib(Graph* graph, int source){
 
 int main(){
 
-    int V = 4;
+    int V = 10;
     Graph* newGraph = new Graph(V);
 
     //Pairing heap crashing for some reason????
     newGraph->addEdge(0, 1, 1);
-    newGraph->addEdge(0, 2, 3);
-    newGraph->addEdge(1, 2, 1);
+    newGraph->addEdge(0, 2, 2);
+    newGraph->addEdge(1, 2, 5);
     newGraph->addEdge(1, 3, 2);
-    newGraph->addEdge(2, 3, 5);
+    newGraph->addEdge(2, 3, 10);
+    newGraph->addEdge(3, 4, 3);
+    newGraph->addEdge(1, 5, 2);
+    newGraph->addEdge(3, 6, 1);
+    newGraph->addEdge(2, 8, 2);
+    newGraph->addEdge(5, 9, 3);
 
     DijkstraFib(newGraph, 0);
+    DijkstraPairing(newGraph, 0);
 
     return 0;
 }

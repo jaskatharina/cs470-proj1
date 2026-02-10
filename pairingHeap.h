@@ -41,6 +41,11 @@ public:
         return node == nullptr;
     }
 
+    //checks if heap is empty
+    bool isEmpty() {
+        return isEmpty(this->root);
+    }
+
     //if prev points to node's parent, returns true
     //if prev points to node's sibling, returns false
     bool isLeftmostChild(Node* node) {
@@ -107,9 +112,10 @@ public:
     //extracts the node, replaces the key, and melds it back onto the heap
     void decreaseKey(Node* node, int newKey) {
 
-        //remove subtree rooted at node
+        //if node is root just update its key
         if(isEmpty(node->prev)) {
-            std::cout << "Error: calling decreaseKey on root";
+            node->key = newKey;
+            return;
         }
         else {
             Node* child = node->child;
