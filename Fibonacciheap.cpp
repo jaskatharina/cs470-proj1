@@ -128,8 +128,30 @@ private:
 public:
     FibonacciHeap() : minNode(nullptr), n(0) {}
 
+    bool isEmpty() {
+        return this->minNode == nullptr;
+    }
+
     FibNode* insert(int key) {
         FibNode* node = new FibNode(key);
+        if (!minNode) {
+            minNode = node;
+        } else {
+            node->left = minNode;
+            node->right = minNode->right;
+            minNode->right->left = node;
+            minNode->right = node;
+            if (key < minNode->key)
+                minNode = node;
+        }
+        n++;
+        return node;
+    }
+
+    //overloaded insert that sets num
+    FibNode* insert(int key, int num) {
+        FibNode* node = new FibNode(key);
+        node->num = num;
         if (!minNode) {
             minNode = node;
         } else {

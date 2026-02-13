@@ -5,6 +5,7 @@
 #include <climits>
 #include "pairingHeap.h"
 #include "Fibonacciheap.cpp"
+#include "metrics.h"
 
 
 using namespace std;
@@ -65,32 +66,30 @@ void DijkstraPairing(Graph* graph, int source){
         //fill arrays and heap
     for (int i = 0; i < vert; i++){
         values[i] = INT_MAX; //should be int_max
-        Node* newNode = pairHeap->insert(INT_MAX, i);
-        nodeArray[i] = newNode;
+        nodeArray.at(i) = pairHeap->insert(INT_MAX, i);
     }
 
-    values[source] = 0;
-    pairHeap->decreaseKey(nodeArray[source], 0);
+    
+    pairHeap->decreaseKey(nodeArray.at(source), 0);
+    values.at(source) = 0;
 
-    while(!pairHeap->isEmpty(pairHeap->root)){
-        Node* tempNode = pairHeap->extractMin();
-        int v = tempNode->vertex;
-
-        GraphNode* search = graph->array[tempNode->vertex].first;
+    while(!(pairHeap->isEmpty())){
+        Node* min = pairHeap->extractMin();
+        int v = min->vertex;
+        GraphNode* search = graph->array[min->vertex].first;
 
         while(search != nullptr){
             int destination = search->dest;
 
-            if(nodeArray[destination] != nullptr && values[v] != INT_MAX && (search->weight + values[v]) < values[destination] ){
-                values[destination] = values[v] + search->weight;
-                pairHeap->decreaseKey(nodeArray[destination], values[destination]);
+            if(nodeArray.at(destination) != nullptr && values.at(v) != INT_MAX && (search->weight + values.at(v)) < values.at(destination) ){
+                values.at(destination) = values.at(v) + search->weight;
+                pairHeap->decreaseKey(nodeArray.at(destination), values.at(destination));
             }
-
             search = search->next;
         }
     }
 
-    for(int i = 0; i < values.size(); i++){
+    for(int i = 0; i < vert; i++){
         cout << "vertex: " << i << " ; Distance: " << values[i] << endl;
     }
 }
@@ -102,21 +101,17 @@ void DijkstraFib(Graph* graph, int source){
     vector<FibNode*> nodeArray;
     nodeArray.resize(vert);
     FibonacciHeap* fibHeap = new FibonacciHeap;
-    FibNode* tempNode;
 
     for(int i = 0; i < vert; i++){
         values.at(i) = INT_MAX;
-        tempNode = fibHeap->insert(INT_MAX);
-        tempNode->num = i;
-        nodeArray.at(i) = tempNode;
+        nodeArray.at(i) = fibHeap->insert(INT_MAX, i);
     }
 
     //set values for source node to be zero
-    tempNode = nodeArray.at(source);
-    fibHeap->decreaseKey(tempNode, 0);
+    fibHeap->decreaseKey(nodeArray.at(source), 0);
     values.at(source) = 0;
 
-    while (fibHeap->getMin() != nullptr){
+    while (!(fibHeap->isEmpty())){
         FibNode* minNode = fibHeap->extractMin();
         int u = minNode->num;
         GraphNode* search = graph->array.at(u).first;
@@ -126,7 +121,7 @@ void DijkstraFib(Graph* graph, int source){
             int v = search->dest;
 
             //if not extracted and if value through minNode is less than current value, update current value
-            if(nodeArray.at(v) != nullptr && values[u] != INT_MAX && (search->weight + values.at(u)) < values.at(v)){
+            if(nodeArray.at(v) != nullptr && values.at(u) != INT_MAX && (search->weight + values.at(u)) < values.at(v)){
                 values.at(v) = values.at(u) + search->weight;
                 fibHeap->decreaseKey(nodeArray.at(v), values.at(v));
             }

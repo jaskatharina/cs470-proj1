@@ -5,6 +5,7 @@
 #include <climits>
 #include "pairingHeap.h"
 #include "Fibonacciheap.cpp"
+#include "metrics.h"
 
 using namespace std;
 
@@ -50,7 +51,11 @@ public:
     }
 
     //use this to add a node to the graph
-    void addEdge(int start, int end, int value){
+    void addEdge(int start, int end, int value) {
+        //if start and end node end up being the same, do nothing
+        if(start == end) {
+            return;
+        }
         //adds node to adj list at 'start' value
         GraphNode* newNode = new GraphNode(end, value);
         newNode->next = array[start].first;
@@ -166,21 +171,22 @@ void Prim(Graph* graph, string ds) {
 
 
 int main() {
-    int v = 10;
-    Graph* newGraph = new Graph(v);
+    Metrics* metrics = new Metrics;
+    int max = 1000000;
 
-    //PAIRING: bugs out when later vertex has competing connections????? cant reproduce it????? its going back a nd forth 2>3>2>3???? when pairing heap has 2 keys=toeach other, loops????
-    //each needs 2 connections?
-    newGraph->addEdge(0, 1, 1);
-    newGraph->addEdge(0, 2, 2);
-    newGraph->addEdge(1, 2, 5);
-    newGraph->addEdge(1, 3, 2);
-    newGraph->addEdge(2, 3, 10);
-    newGraph->addEdge(3, 4, 3);
-    newGraph->addEdge(1, 5, 2);
-    newGraph->addEdge(3, 6, 1);
-    newGraph->addEdge(2, 8, 2);
-    newGraph->addEdge(5, 9, 3);
+    unsigned seed = chrono::system_clock::now().time_since_epoch().count();
+    mt19937 gen(seed);
+    uniform_int_distribution<> distrib(0, 1000);
+
+    for(int n = 10; n <= max; n*= 10) {
+        Graph* newGraph = new Graph(n);
+        for(int i = 0; i < n; i++) {
+            newGraph->addEdge(distrib(gen), distrib(gen), distrib(gen));
+        }
+
+        
+
+    }
 
     cout << "fib: " << endl;
     //Fib(newGraph);
