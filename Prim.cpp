@@ -3,7 +3,7 @@
 #include <vector>
 #include <chrono>
 #include <climits>
-#include "pairingHeap.h"
+#include "pairingHeap(2).h"
 #include "Fibonacciheap.cpp"
 
 using namespace std;
@@ -63,130 +63,222 @@ public:
     }
 };
 
-//ds - choice of data structure, "fibonacci" or "pairing", otherwise error
-void Prim(Graph* graph, string ds) {
+//Prims with pairing heap
+void PrimsPairing(Graph* graph){
     int vert = graph->vertices;//number of vertices
     vector<int> values; //holds weight values for comparison
     values.resize(vert);
     vector<int> final; //will hold final tree//u->final[v]
     final.resize(vert);
-    if(ds == "fibonacci") {
-        vector<FibNode*> fibNodeArray; //Fib heap node array. store node from insertKey opp.
-        FibonacciHeap* fibHeap = new FibonacciHeap;
-        fibNodeArray.resize(vert);
+    vector<Node*> nodeArray; //Pairing heap node array. store node from insertKey opp.
+    nodeArray.resize(vert);
+    PairingHeap* pairHeap = new PairingHeap;//Pairing heap for graph nodes
+    chrono::microseconds minTime;
+    chrono::microseconds decreaseTime;
+    minTime = chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now() - chrono::system_clock::now());
+    decreaseTime = chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now() - chrono::system_clock::now());
 
-        FibNode* tempNode;
-            for(int i = 1; i < vert; i++){
-                values.at(i) = INT_MAX;
-                final.at(i) = -1;
-                tempNode = fibHeap->insert(INT_MAX);
-                tempNode->num = i;
-                fibNodeArray.at(i) = tempNode;
-            }
-
-                //Set first vertex to be 0
-            values[0] = 0;        
-            tempNode = fibHeap->insert(0);
-            tempNode->num = 0;
-            fibNodeArray[0] = tempNode;
-
-            while(fibHeap->getMin() != nullptr){
-                FibNode* minNode = fibHeap->extractMin();
-                int u = minNode->num;//min vertex number
-                fibNodeArray.at(u) = nullptr;
-                GraphNode* search = graph->array.at(u).first;
-
-                while(search != nullptr){
-                    int v = search->dest;
-
-                    if(fibNodeArray.at(v) != nullptr && search->weight < values.at(v)){//if in the array
-                        values.at(v) = search->weight;//set comparision values
-                        final.at(v) = u;//set better edge
-                        fibHeap->decreaseKey(fibNodeArray.at(v), search->weight);//set node in heap to new value
-                    }
-                    search = search->next;
-                }
-            }
-
-            for(int i = 0; i < vert; i++){
-                cout << i << " - " << final.at(i) << endl;
-            }
-        
+    //fill arrays and heap
+    //except first vertex
+    for (int i = 1; i < vert; i++){
+        values[i] = INT_MAX; //should be int_max
+        final[i] = -1;
+        Node* newNode = pairHeap->insert(INT_MAX, i);
+        nodeArray[i] = newNode;
     }
-    else if(ds == "pairing") {
-        PairingHeap* pairHeap = new PairingHeap;
-        vector<Node*> nodeArray; //Pairing heap node array. store node from insertKey opp.
-        nodeArray.resize(vert);
-        //fill arrays and heap
-        //except first vertex
-        for (int i = 1; i < vert; i++){
-            values[i] = INT_MAX; //should be int_max
-            final[i] = -1;
-            Node* newNode = pairHeap->insert(INT_MAX, i);
-            nodeArray[i] = newNode;
-        }
 
-        //Set first vertex to be 0
-        values[0] = 0;        
-        Node* newNode = pairHeap->insert(0, 0);
-        nodeArray[0] = newNode;
-        while(!pairHeap->isEmpty()){
-            newNode = pairHeap->extractMin(); //Pulls min from heap
-            nodeArray[newNode->vertex] = nullptr;
-            GraphNode* search = graph->array[newNode->vertex].first; //sets search as the first node in the minNode's adj list
+    //Set first vertex to be 0
+    values[0] = 0;        
+    Node* newNode = pairHeap->insert(0, 0);
+    nodeArray[0] = newNode;
 
-            while(search != nullptr){
-                int destination = search->dest;
-                //If note extracted yet(if pointer in array = nullptr), 
-                if(nodeArray[destination] != nullptr && search->weight < values[destination]){
-                    values[destination] = search->weight; //set value to new value
-                    final[destination] = newNode->vertex;  //set that destination will connect to vertex ( [i] -> v)
-                    pairHeap->decreaseKey(nodeArray[destination], search->weight); //update key of pairing heap node
-                }
-                if(search->next != nullptr){
-                }
-                search = search->next;
+    //TODO ASK FOR EMPTY TREE OPP???
+    while(!pairHeap->isEmpty(pairHeap->root)){
+        auto timerStart = chrono::system_clock::now();
+        newNode = pairHeap->extractMin(); //Pulls min from heap
+        auto timerEnd = chrono::system_clock::now();
+        auto tempTime = chrono::duration_cast<chrono::microseconds>(timerEnd-timerStart);
+        minTime += tempTime;
+        GraphNode* search = graph->array[newNode->vertex].first; //sets search as the first node in the minNode's adj list
+
+        while(search != nullptr){
+            int destination = search->dest;
+            //If note extracted yet(if pointer in array = nullptr), 
+            if(nodeArray[destination] != nullptr && search->weight < values[destination]){
+                values[destination] = search->weight; //set value to new value
+                final[destination] = newNode->vertex;  //set that destination will connect to vertex ( [i] connects to-> v)
+                timerStart = chrono::system_clock::now();
+                pairHeap->decreaseKey(nodeArray[destination], search->weight); //update key of pairing heap node
+                timerEnd = chrono::system_clock::now();
+                tempTime = chrono::duration_cast<chrono::microseconds>(timerEnd-timerStart);
+                decreaseTime += tempTime;   
             }
+            if(search->next != nullptr){
+            }
+            search = search->next;
         }
-
-        //Outputs completed array
-        for(int i = 0; i < vert; i++){
-            cout << i << " - " << final[i] << endl;
-        }
-        return;
-
-        }
-    else {
-        cout << "invalid value of ds, try again with \"fibonacci\" or \"pairing\"" << endl;
-        return;
     }
-    
 
+    //Outputs completed array
+    for(int i = 0; i < graph->vertices; i++){
+        cout << i << " - " << final[i] << endl;
+    }
+
+    cout << "min extract time: " << minTime.count() << endl;
+    cout << "decrease key time: " << decreaseTime.count() << endl;
+}
+
+//Prims with Fib heap
+void PrimsFib(Graph* graph){
+    int vert = graph->vertices;
+    vector<int> final;//will hold final connections
+    final.resize(vert);
+    vector<int> values;//holds comparision values
+    values.resize(vert);
+    vector<FibNode*> nodeArray; //Pairing heap node array. store node from insertKey opp.
+    nodeArray.resize(vert);
+    FibonacciHeap* fibHeap = new FibonacciHeap;
+    FibNode* tempNode;
+    chrono::microseconds minTime;
+    chrono::microseconds decreaseTime;
+    minTime = chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now() - chrono::system_clock::now());
+    decreaseTime = chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now() - chrono::system_clock::now());
+
+    for(int i = 1; i < vert; i++){
+        values.at(i) = INT_MAX;
+        final.at(i) = -1;
+        tempNode = fibHeap->insert(INT_MAX);
+        tempNode->num = i;
+        nodeArray.at(i) = tempNode;
+    }
+
+    //Set first vertex to be 0
+    values[0] = 0;        
+    tempNode = fibHeap->insert(0);
+    tempNode->num = 0;
+    nodeArray[0] = tempNode;
+
+    while(fibHeap->getMin() != nullptr){
+        auto timerStart = chrono::system_clock::now();
+        FibNode* minNode = fibHeap->extractMin();
+        auto timerEnd = chrono::system_clock::now();
+        auto tempTime = chrono::duration_cast<chrono::microseconds>(timerEnd-timerStart);
+        minTime += tempTime;
+        int u = minNode->num;//min vertex number
+        GraphNode* search = graph->array.at(u).first;
+
+        while(search != nullptr){
+            int v = search->dest;
+
+            if(nodeArray.at(v) != nullptr && search->weight < values.at(v)){//if in the array
+                values.at(v) = search->weight;//set comparision values
+                final.at(v) = u;//set better edge
+                timerStart = chrono::system_clock::now();
+                fibHeap->decreaseKey(nodeArray.at(v), search->weight);//set node in heap to new value
+                timerEnd = chrono::system_clock::now();
+                tempTime = chrono::duration_cast<chrono::microseconds>(timerEnd-timerStart);
+                decreaseTime += tempTime;
+            }
+            search = search->next;
+        }
+    }
+
+    for(int i = 0; i < vert; i++){
+        cout << i << " - " << final.at(i) << endl;
+    }
+
+    cout << "min extract time: " << minTime.count() << endl;
+    cout << "decrease key time: " << decreaseTime.count() << endl;
 }
 
 
+void Binary(Graph* graph){
+    int vert = graph->vertices;
+    vector<int> final;//will hold final connections
+    final.resize(vert);
+    vector<int> values;//holds comparision values
+    values.resize(vert);
+    vector<FibNode*> nodeArray; //Pairing heap node array. store node from insertKey opp.
+    nodeArray.resize(vert);
+    FibonacciHeap* fibHeap = new FibonacciHeap;
+    FibNode* tempNode;
+
+    for(int i = 1; i < vert; i++){
+        values.at(i) = INT_MAX;
+        final.at(i) = -1;
+        tempNode = fibHeap->insert(INT_MAX);
+        tempNode->num = i;
+        nodeArray.at(i) = tempNode;
+    }
+
+        //Set first vertex to be 0
+    values[0] = 0;        
+    tempNode = fibHeap->insert(0);
+    tempNode->num = 0;
+    nodeArray[0] = tempNode;
+
+    while(fibHeap->getMin() != nullptr){
+        FibNode* minNode = fibHeap->extractMin();
+        int u = minNode->num;//min vertex number
+        GraphNode* search = graph->array.at(u).first;
+
+        while(search != nullptr){
+            int v = search->dest;
+
+            if(nodeArray.at(v) != nullptr && search->weight < values.at(v)){//if in the array
+                values.at(v) = search->weight;//set comparision values
+                final.at(v) = u;//set better edge
+                fibHeap->decreaseKey(nodeArray.at(v), search->weight);//set node in heap to new value
+            }
+            search = search->next;
+        }
+    }
+
+    for(int i = 0; i < vert; i++){
+        cout << i << " - " << final.at(i) << endl;
+    }
+
+
+}
+
 int main() {
-    int v = 10;
-    Graph* newGraph = new Graph(v);
+    
+    auto startOverall = chrono::system_clock::now();
+    int v = 9;
 
-    //PAIRING: bugs out when later vertex has competing connections????? cant reproduce it????? its going back a nd forth 2>3>2>3???? when pairing heap has 2 keys=toeach other, loops????
-    //each needs 2 connections?
-    newGraph->addEdge(0, 1, 1);
-    newGraph->addEdge(0, 2, 2);
-    newGraph->addEdge(1, 2, 5);
-    newGraph->addEdge(1, 3, 2);
-    newGraph->addEdge(2, 3, 10);
-    newGraph->addEdge(3, 4, 3);
-    newGraph->addEdge(1, 5, 2);
-    newGraph->addEdge(3, 6, 1);
-    newGraph->addEdge(2, 8, 2);
-    newGraph->addEdge(5, 9, 3);
+    //example: Grid Graph
+    Graph* gridGraph = new Graph(v);
+    gridGraph->addEdge(0, 1, 1);
+    gridGraph->addEdge(0, 3, 3);
+    gridGraph->addEdge(1, 2, 1);
+    gridGraph->addEdge(1, 4, 4);
+    gridGraph->addEdge(2, 5, 1);
+    gridGraph->addEdge(3, 4, 10);
+    gridGraph->addEdge(3, 6, 1);
+    gridGraph->addEdge(4, 5, 5);
+    gridGraph->addEdge(5, 8, 1);
+    gridGraph->addEdge(6, 7, 1);
+    gridGraph->addEdge(7, 8, 10);
 
-    cout << "fib: " << endl;
-    //Fib(newGraph);
-    Prim(newGraph, "fibonacci");
-    cout << "pairing: " << endl;
-    //PrimsPairing(newGraph);
-    Prim(newGraph, "pairing");
+    //worst case graph? not quite sure
+    Graph* worstGraph = new Graph(v);
+    worstGraph->addEdge(0, 1, 1);
+    worstGraph->addEdge(0, 8, 8);
+    worstGraph->addEdge(1, 2, 1);
+    worstGraph->addEdge(2, 3, 1);
+    worstGraph->addEdge(3, 4, 1);
+    worstGraph->addEdge(4, 5, 1);
+    worstGraph->addEdge(5, 6, 1);
+    worstGraph->addEdge(6, 7, 1);
+    worstGraph->addEdge(7, 8, 1);
+
+    PrimsPairing(gridGraph);
+
+    auto endOverall = chrono::system_clock::now();
+
+    auto overallTime = chrono::duration_cast<chrono::microseconds>(endOverall-startOverall);
+
+    cout << "Overall Time: " << overallTime.count() << " microseconds" << endl;
+
     return 0;
 }

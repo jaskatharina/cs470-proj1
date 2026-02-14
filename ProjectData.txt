@@ -1,0 +1,39 @@
+Prims Fib:
+-overall: microseconds
+	-worst: 620
+		-min extract time: 3
+		-decrease key time: 0
+	-grid: 510
+		-min extract time: 5
+		-decrease key time: 0
+
+Prims pairing:
+-overall: microseconds
+	-worst:
+		-min extract time: 0
+		-decrease key time: 38
+		-Overall Time: 968 microseconds
+	-grid:
+		-min extract time: 0
+		-decrease key time: 71
+		-Overall Time: 683 microseconds
+ Dji Pairing:
+-overall: microseconds
+	-worst: 
+		-min extract time: 0
+		-decrease key time: 81
+		-Overall Time: 1092 microseconds
+	-grid: 
+		-min extract time: 0
+		-decrease key time: 29
+		-Overall Time: 966 microseconds
+Dji Fib:
+-overall: microseconds
+	-worst:
+		-min extract time: 5
+		-decrease key time: 0
+		-Overall Time: 743 microseconds
+	-grid:
+		-min extract time: 4
+		-decrease key time: 0
+		-Overall Time: 678 microseconds

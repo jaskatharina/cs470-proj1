@@ -3,7 +3,7 @@
 #include <vector>
 #include <chrono>
 #include <climits>
-#include "pairingHeap.h"
+#include "pairingHeap(2).h"
 #include "Fibonacciheap.cpp"
 
 
@@ -61,6 +61,10 @@ void DijkstraPairing(Graph* graph, int source){
     vector<Node*> nodeArray;//array of nodes
     nodeArray.resize(vert);
     PairingHeap* pairHeap = new PairingHeap;
+    chrono::microseconds minTime;
+    chrono::microseconds decreaseTime;
+    minTime = chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now() - chrono::system_clock::now());
+    decreaseTime = chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now() - chrono::system_clock::now());
 
         //fill arrays and heap
     for (int i = 0; i < vert; i++){
@@ -73,17 +77,23 @@ void DijkstraPairing(Graph* graph, int source){
     pairHeap->decreaseKey(nodeArray[source], 0);
 
     while(!pairHeap->isEmpty(pairHeap->root)){
+        auto timerStart = chrono::system_clock::now();
         Node* tempNode = pairHeap->extractMin();
         int v = tempNode->vertex;
-
+        auto timerEnd = chrono::system_clock::now();
+        auto tempTime = chrono::duration_cast<chrono::microseconds>(timerEnd-timerStart);
+        minTime += tempTime;
         GraphNode* search = graph->array[tempNode->vertex].first;
 
         while(search != nullptr){
             int destination = search->dest;
-
             if(nodeArray[destination] != nullptr && values[v] != INT_MAX && (search->weight + values[v]) < values[destination] ){
                 values[destination] = values[v] + search->weight;
+                timerStart = chrono::system_clock::now();
                 pairHeap->decreaseKey(nodeArray[destination], values[destination]);
+                timerEnd = chrono::system_clock::now();
+                tempTime = chrono::duration_cast<chrono::microseconds>(timerEnd-timerStart);
+                decreaseTime += tempTime;
             }
 
             search = search->next;
@@ -93,6 +103,8 @@ void DijkstraPairing(Graph* graph, int source){
     for(int i = 0; i < values.size(); i++){
         cout << "vertex: " << i << " ; Distance: " << values[i] << endl;
     }
+    cout << "min extract time: " << minTime.count() << endl;
+    cout << "decrease key time: " << decreaseTime.count() << endl;
 }
 
 void DijkstraFib(Graph* graph, int source){
@@ -103,6 +115,10 @@ void DijkstraFib(Graph* graph, int source){
     nodeArray.resize(vert);
     FibonacciHeap* fibHeap = new FibonacciHeap;
     FibNode* tempNode;
+    chrono::microseconds minTime;
+    chrono::microseconds decreaseTime;
+    minTime = chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now() - chrono::system_clock::now());
+    decreaseTime = chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now() - chrono::system_clock::now());
 
     for(int i = 0; i < vert; i++){
         values.at(i) = INT_MAX;
@@ -117,7 +133,11 @@ void DijkstraFib(Graph* graph, int source){
     values.at(source) = 0;
 
     while (fibHeap->getMin() != nullptr){
+        auto timerStart = chrono::system_clock::now();
         FibNode* minNode = fibHeap->extractMin();
+        auto timerEnd = chrono::system_clock::now();
+        auto tempTime = chrono::duration_cast<chrono::microseconds>(timerEnd-timerStart);
+        minTime += tempTime;
         int u = minNode->num;
         GraphNode* search = graph->array.at(u).first;
 
@@ -128,7 +148,11 @@ void DijkstraFib(Graph* graph, int source){
             //if not extracted and if value through minNode is less than current value, update current value
             if(nodeArray.at(v) != nullptr && values[u] != INT_MAX && (search->weight + values.at(u)) < values.at(v)){
                 values.at(v) = values.at(u) + search->weight;
+                auto timerStart = chrono::system_clock::now();
                 fibHeap->decreaseKey(nodeArray.at(v), values.at(v));
+                timerEnd = chrono::system_clock::now();
+                tempTime = chrono::duration_cast<chrono::microseconds>(timerEnd-timerStart);
+                decreaseTime += tempTime;
             }
             
             search = search->next;
@@ -138,27 +162,48 @@ void DijkstraFib(Graph* graph, int source){
     for(int i = 0; i < vert; i++){
         cout << i << " distance from source: " << values.at(i) << endl;
     }
+    cout << "min extract time: " << minTime.count() << endl;
+    cout << "decrease key time: " << decreaseTime.count() << endl;
 }
 
 int main(){
 
-    int V = 10;
-    Graph* newGraph = new Graph(V);
+auto startOverall = chrono::system_clock::now();
+    int v = 9;
 
-    //Pairing heap crashing for some reason????
-    newGraph->addEdge(0, 1, 1);
-    newGraph->addEdge(0, 2, 2);
-    newGraph->addEdge(1, 2, 5);
-    newGraph->addEdge(1, 3, 2);
-    newGraph->addEdge(2, 3, 10);
-    newGraph->addEdge(3, 4, 3);
-    newGraph->addEdge(1, 5, 2);
-    newGraph->addEdge(3, 6, 1);
-    newGraph->addEdge(2, 8, 2);
-    newGraph->addEdge(5, 9, 3);
+    //example: Grid Graph
+    Graph* gridGraph = new Graph(v);
+    gridGraph->addEdge(0, 1, 1);
+    gridGraph->addEdge(0, 3, 3);
+    gridGraph->addEdge(1, 2, 1);
+    gridGraph->addEdge(1, 4, 4);
+    gridGraph->addEdge(2, 5, 1);
+    gridGraph->addEdge(3, 4, 10);
+    gridGraph->addEdge(3, 6, 1);
+    gridGraph->addEdge(4, 5, 5);
+    gridGraph->addEdge(5, 8, 1);
+    gridGraph->addEdge(6, 7, 1);
+    gridGraph->addEdge(7, 8, 10);
 
-    DijkstraFib(newGraph, 0);
-    DijkstraPairing(newGraph, 0);
+    //worst case graph? not quite sure
+    Graph* worstGraph = new Graph(v);
+    worstGraph->addEdge(0, 1, 1);
+    worstGraph->addEdge(0, 8, 8);
+    worstGraph->addEdge(1, 2, 1);
+    worstGraph->addEdge(2, 3, 1);
+    worstGraph->addEdge(3, 4, 1);
+    worstGraph->addEdge(4, 5, 1);
+    worstGraph->addEdge(5, 6, 1);
+    worstGraph->addEdge(6, 7, 1);
+    worstGraph->addEdge(7, 8, 1);
+
+    DijkstraPairing(worstGraph, 0);
+
+    auto endOverall = chrono::system_clock::now();
+
+    auto overallTime = chrono::duration_cast<chrono::microseconds>(endOverall-startOverall);
+
+    cout << "Overall Time: " << overallTime.count() << " microseconds" << endl;
 
     return 0;
 }
