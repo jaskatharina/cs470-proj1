@@ -1,10 +1,14 @@
 #include <iostream>
+#include <fstream>
 #include <random>
 #include <vector>
 #include <chrono>
 #include <climits>
-#include "pairingHeap(2).h"
+#include "pairingHeap.h"
 #include "Fibonacciheap.cpp"
+#include "metrics.h"
+#include <bits/stdc++.h>
+
 
 
 using namespace std;
@@ -54,90 +58,70 @@ public:
     }
 };
 
-void DijkstraPairing(Graph* graph, int source){
+void DijkstraPairing(Graph* graph, int source, Metrics* metrics = nullptr){
     int vert = graph->vertices;
     vector<int> values; //hold values for comparison
     values.resize(vert);
     vector<Node*> nodeArray;//array of nodes
     nodeArray.resize(vert);
     PairingHeap* pairHeap = new PairingHeap;
-    chrono::microseconds minTime;
-    chrono::microseconds decreaseTime;
-    minTime = chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now() - chrono::system_clock::now());
-    decreaseTime = chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now() - chrono::system_clock::now());
 
         //fill arrays and heap
     for (int i = 0; i < vert; i++){
         values[i] = INT_MAX; //should be int_max
-        Node* newNode = pairHeap->insert(INT_MAX, i);
-        nodeArray[i] = newNode;
+        nodeArray.at(i) = pairHeap->insert(INT_MAX, i);
     }
 
-    values[source] = 0;
-    pairHeap->decreaseKey(nodeArray[source], 0);
+    
+    pairHeap->decreaseKey(nodeArray.at(source), 0);
+    values.at(source) = 0;
 
-    while(!pairHeap->isEmpty(pairHeap->root)){
-        auto timerStart = chrono::system_clock::now();
-        Node* tempNode = pairHeap->extractMin();
-        int v = tempNode->vertex;
-        auto timerEnd = chrono::system_clock::now();
-        auto tempTime = chrono::duration_cast<chrono::microseconds>(timerEnd-timerStart);
-        minTime += tempTime;
-        GraphNode* search = graph->array[tempNode->vertex].first;
+    while(!(pairHeap->isEmpty())){
+        if(metrics) metrics->startExtractMin();
+        Node* min = pairHeap->extractMin();
+        if(metrics) metrics->stopExtractMin();
+        int v = min->vertex;
+        GraphNode* search = graph->array[min->vertex].first;
 
         while(search != nullptr){
             int destination = search->dest;
-            if(nodeArray[destination] != nullptr && values[v] != INT_MAX && (search->weight + values[v]) < values[destination] ){
-                values[destination] = values[v] + search->weight;
-                timerStart = chrono::system_clock::now();
-                pairHeap->decreaseKey(nodeArray[destination], values[destination]);
-                timerEnd = chrono::system_clock::now();
-                tempTime = chrono::duration_cast<chrono::microseconds>(timerEnd-timerStart);
-                decreaseTime += tempTime;
-            }
 
+            if(nodeArray.at(destination) != nullptr && values.at(v) != INT_MAX && (search->weight + values.at(v)) < values.at(destination) ){
+                values.at(destination) = values.at(v) + search->weight;
+                if(metrics) metrics->startDecreaseKey();
+                pairHeap->decreaseKey(nodeArray.at(destination), values.at(destination));
+                if(metrics) metrics->stopDecreaseKey();
+            }
             search = search->next;
         }
     }
 
-    for(int i = 0; i < values.size(); i++){
-        cout << "vertex: " << i << " ; Distance: " << values[i] << endl;
-    }
-    cout << "min extract time: " << minTime.count() << endl;
-    cout << "decrease key time: " << decreaseTime.count() << endl;
+    // for(int i = 0; i < vert; i++){
+    //     cout << "vertex: " << i << " ; Distance: " << values[i] << endl;
+    // }
 }
 
-void DijkstraFib(Graph* graph, int source){
+void DijkstraFib(Graph* graph, int source, Metrics* metrics = nullptr){
     int vert = graph->vertices;
     vector<int> values;
     values.resize(vert);
     vector<FibNode*> nodeArray;
     nodeArray.resize(vert);
     FibonacciHeap* fibHeap = new FibonacciHeap;
-    FibNode* tempNode;
-    chrono::microseconds minTime;
-    chrono::microseconds decreaseTime;
-    minTime = chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now() - chrono::system_clock::now());
-    decreaseTime = chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now() - chrono::system_clock::now());
 
     for(int i = 0; i < vert; i++){
         values.at(i) = INT_MAX;
-        tempNode = fibHeap->insert(INT_MAX);
-        tempNode->num = i;
-        nodeArray.at(i) = tempNode;
+        nodeArray.at(i) = fibHeap->insert(INT_MAX, i);
     }
 
     //set values for source node to be zero
-    tempNode = nodeArray.at(source);
-    fibHeap->decreaseKey(tempNode, 0);
+    fibHeap->decreaseKey(nodeArray.at(source), 0);
     values.at(source) = 0;
 
-    while (fibHeap->getMin() != nullptr){
-        auto timerStart = chrono::system_clock::now();
+    while (!(fibHeap->isEmpty())){
+        if(metrics) metrics->startExtractMin();
         FibNode* minNode = fibHeap->extractMin();
-        auto timerEnd = chrono::system_clock::now();
-        auto tempTime = chrono::duration_cast<chrono::microseconds>(timerEnd-timerStart);
-        minTime += tempTime;
+        if(metrics) metrics->stopExtractMin();
         int u = minNode->num;
         GraphNode* search = graph->array.at(u).first;
 
@@ -146,64 +130,148 @@ void DijkstraFib(Graph* graph, int source){
             int v = search->dest;
 
             //if not extracted and if value through minNode is less than current value, update current value
-            if(nodeArray.at(v) != nullptr && values[u] != INT_MAX && (search->weight + values.at(u)) < values.at(v)){
+            if(nodeArray.at(v) != nullptr && values.at(u) != INT_MAX && (search->weight + values.at(u)) < values.at(v)){
                 values.at(v) = values.at(u) + search->weight;
-                auto timerStart = chrono::system_clock::now();
+                if(metrics) metrics->startDecreaseKey();
                 fibHeap->decreaseKey(nodeArray.at(v), values.at(v));
-                timerEnd = chrono::system_clock::now();
-                tempTime = chrono::duration_cast<chrono::microseconds>(timerEnd-timerStart);
-                decreaseTime += tempTime;
+                if(metrics) metrics->stopDecreaseKey();
             }
             
             search = search->next;
         }
     }
 
-    for(int i = 0; i < vert; i++){
-        cout << i << " distance from source: " << values.at(i) << endl;
-    }
-    cout << "min extract time: " << minTime.count() << endl;
-    cout << "decrease key time: " << decreaseTime.count() << endl;
+    // for(int i = 0; i < vert; i++){
+    //     cout << i << " distance from source: " << values.at(i) << endl;
+    // }
 }
+int main() {
 
-int main(){
+    const int RUNS = 10;
 
-auto startOverall = chrono::system_clock::now();
-    int v = 9;
+    // Lambda to compute mean and SD
+    auto computeMeanSD = [](auto &v, double &mean, double &sd) {
+        int n = v.size();
+        mean = 0;
+        for (auto x : v) mean += x;
+        mean /= n;
 
-    //example: Grid Graph
-    Graph* gridGraph = new Graph(v);
-    gridGraph->addEdge(0, 1, 1);
-    gridGraph->addEdge(0, 3, 3);
-    gridGraph->addEdge(1, 2, 1);
-    gridGraph->addEdge(1, 4, 4);
-    gridGraph->addEdge(2, 5, 1);
-    gridGraph->addEdge(3, 4, 10);
-    gridGraph->addEdge(3, 6, 1);
-    gridGraph->addEdge(4, 5, 5);
-    gridGraph->addEdge(5, 8, 1);
-    gridGraph->addEdge(6, 7, 1);
-    gridGraph->addEdge(7, 8, 10);
+        sd = 0;
+        for (auto x : v) sd += (x - mean) * (x - mean);
+        sd = sqrt(sd / n);
+    };
 
-    //worst case graph? not quite sure
-    Graph* worstGraph = new Graph(v);
-    worstGraph->addEdge(0, 1, 1);
-    worstGraph->addEdge(0, 8, 8);
-    worstGraph->addEdge(1, 2, 1);
-    worstGraph->addEdge(2, 3, 1);
-    worstGraph->addEdge(3, 4, 1);
-    worstGraph->addEdge(4, 5, 1);
-    worstGraph->addEdge(5, 6, 1);
-    worstGraph->addEdge(6, 7, 1);
-    worstGraph->addEdge(7, 8, 1);
+    // Open CSV file
+    ofstream csvFile("dijkstra_results.csv");
+    csvFile << "n,total_mean,total_sd,decrease_mean,decrease_sd,extract_mean,extract_sd,ops_mean,ops_sd,heap_type,graph_type\n";
 
-    DijkstraPairing(worstGraph, 0);
+    for (int v = 10; v <= 1000; v *= 10) {
 
-    auto endOverall = chrono::system_clock::now();
+        for (auto graph_type : {"Sparse", "Dense"}) {
 
-    auto overallTime = chrono::duration_cast<chrono::microseconds>(endOverall-startOverall);
+            cout << "====================================\n";
+            cout << graph_type << " graph, size n = " << v << "\n";
 
-    cout << "Overall Time: " << overallTime.count() << " microseconds" << endl;
+            // Vectors to store per-run metrics 
+            vector<double> fib_total(RUNS), fib_dec(RUNS), fib_ex(RUNS);
+            vector<int> fib_ops(RUNS);
+
+            vector<double> pair_total(RUNS), pair_dec(RUNS), pair_ex(RUNS);
+            vector<int> pair_ops(RUNS);
+
+            for (int r = 0; r < RUNS; r++) {
+
+                Graph* newGraph = new Graph(v);
+
+                unsigned seed = 42 + r;
+                mt19937 gen(seed);
+                uniform_int_distribution<> vertexDistrib(0, v - 1);
+                uniform_int_distribution<> weightDistrib(0, 100);
+
+                // Determine number of edges
+                int numEdges;
+                if (string(graph_type) == "Sparse") {
+                    numEdges = v; // ~1 edge per vertex
+                } else {
+                    double density = 0.2; // 20% of all possible edges
+                    numEdges = static_cast<int>(v * (v - 1) / 2 * density);
+                }
+
+                // Use a set to avoid duplicate edges
+                set<pair<int,int>> addedEdges;
+
+                // Ensure connectivity first (chain)
+                for (int i = 0; i < v-1; i++) {
+                    newGraph->addEdge(i, i+1, weightDistrib(gen));
+                    addedEdges.insert({i, i+1});
+                }
+
+                // Add remaining edges randomly
+                while ((int)addedEdges.size() < numEdges) {
+                    int u = vertexDistrib(gen);
+                    int w = vertexDistrib(gen);
+                    if (u == w) continue;
+                    auto e = minmax(u, w);
+                    if (addedEdges.count(e)) continue;
+                    newGraph->addEdge(e.first, e.second, weightDistrib(gen));
+                    addedEdges.insert(e);
+                }
+
+                Metrics metrics;
+
+                // Fibonacci Heap
+                metrics.startRun();
+                DijkstraFib(newGraph, 0, &metrics);
+                metrics.stopRun();
+
+                fib_total[r] = metrics.totalRunTime();
+                fib_dec[r]   = metrics.decreaseKeyTime();
+                fib_ex[r]    = metrics.extractMinTime();
+                fib_ops[r]   = metrics.heapOps();
+                metrics.clear();
+
+                // Pairing Heap
+                metrics.startRun();
+                DijkstraPairing(newGraph, 0, &metrics);
+                metrics.stopRun();
+
+                pair_total[r] = metrics.totalRunTime();
+                pair_dec[r]   = metrics.decreaseKeyTime();
+                pair_ex[r]    = metrics.extractMinTime();
+                pair_ops[r]   = metrics.heapOps();
+
+                delete newGraph;
+            }
+
+            // Fibonacci Heap metrics
+            double mean, sd;
+            computeMeanSD(fib_total, mean, sd); double total_mean = mean, total_sd = sd;
+            computeMeanSD(fib_dec, mean, sd);   double dec_mean = mean, dec_sd = sd;
+            computeMeanSD(fib_ex, mean, sd);    double ex_mean = mean, ex_sd = sd;
+            computeMeanSD(fib_ops, mean, sd);   double ops_mean = mean, ops_sd = sd;
+
+            cout << "Dijkstra (Fibonacci Heap) — Total runtime: " << total_mean << " s ± " << total_sd << " s\n";
+            csvFile << v << "," << total_mean << "," << total_sd << ","
+                    << dec_mean << "," << dec_sd << ","
+                    << ex_mean << "," << ex_sd << ","
+                    << ops_mean << "," << ops_sd << ",Fibonacci," << graph_type << "\n";
+
+            // Pairing Heap metrics
+            computeMeanSD(pair_total, mean, sd); total_mean = mean; total_sd = sd;
+            computeMeanSD(pair_dec, mean, sd);   dec_mean = mean; dec_sd = sd;
+            computeMeanSD(pair_ex, mean, sd);    ex_mean = mean; ex_sd = sd;
+            computeMeanSD(pair_ops, mean, sd);   ops_mean = mean; ops_sd = sd;
+
+            cout << "Dijkstra (Pairing Heap) — Total runtime: " << total_mean << " s ± " << total_sd << " s\n";
+            csvFile << v << "," << total_mean << "," << total_sd << ","
+                    << dec_mean << "," << dec_sd << ","
+                    << ex_mean << "," << ex_sd << ","
+                    << ops_mean << "," << ops_sd << ",Pairing," << graph_type << "\n";
+        }
+    }
+
+    csvFile.close();
+    cout << "\nCSV results written to dijkstra_results.csv\n";
 
     return 0;
 }
