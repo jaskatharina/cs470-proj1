@@ -93,37 +93,34 @@ void Prim(Graph* graph, string ds, Metrics* metrics = nullptr) {
         FibonacciHeap* fibHeap = new FibonacciHeap;
         fibNodeArray.resize(vert);
 
-        FibNode* tempNode;
             for(int i = 1; i < vert; i++){
                 values.at(i) = INT_MAX;
                 final.at(i) = -1;
-                tempNode = fibHeap->insert(INT_MAX);
-                tempNode->num = i;
+                FibNode* tempNode = fibHeap->insert(INT_MAX, i);
                 fibNodeArray.at(i) = tempNode;
             }
 
-                //Set first vertex to be 0
+            //Set first vertex to be 0
             values[0] = 0;        
-            tempNode = fibHeap->insert(0);
-            tempNode->num = 0;
+            FibNode* tempNode = fibHeap->insert(0, 0);
             fibNodeArray[0] = tempNode;
 
-            while(fibHeap->getMin() != nullptr){
+            while(!fibHeap->isEmpty()){
                 if(metrics) metrics->startExtractMin();
                 FibNode* minNode = fibHeap->extractMin();
                 if(metrics) metrics->stopExtractMin();
-                int u = minNode->num;//min vertex number
-                fibNodeArray.at(u) = nullptr;
-                GraphNode* search = graph->array.at(u).first;
+                int minNum = minNode->num;//min vertex number
+                fibNodeArray.at(minNum) = nullptr;
+                GraphNode* search = graph->array.at(minNum).first;
 
                 while(search != nullptr){
-                    int v = search->dest;
+                    int dest = search->dest;
 
-                    if(fibNodeArray.at(v) != nullptr && search->weight < values.at(v)){//if in the array
-                        values.at(v) = search->weight;//set comparision values
-                        final.at(v) = u;//set better edge
+                    if(fibNodeArray.at(dest) != nullptr && search->weight < values.at(dest)){//if in the array
+                        values.at(dest) = search->weight;//set comparision values
+                        final.at(dest) = minNum;//set better edge
                         if(metrics) metrics->startDecreaseKey();
-                        fibHeap->decreaseKey(fibNodeArray.at(v), search->weight);//set node in heap to new value
+                        fibHeap->decreaseKey(fibNodeArray.at(dest), search->weight);//set node in heap to new value
                         if(metrics) metrics->stopDecreaseKey();
                     }
                     search = search->next;
@@ -143,34 +140,34 @@ void Prim(Graph* graph, string ds, Metrics* metrics = nullptr) {
         //fill arrays and heap
         //except first vertex
         for (int i = 1; i < vert; i++){
-            values[i] = INT_MAX; //should be int_max
-            final[i] = -1;
+            values.at(i) = INT_MAX; //should be int_max
+            final.at(i) = -1;
             Node* newNode = pairHeap->insert(INT_MAX, i);
-            nodeArray[i] = newNode;
+            nodeArray.at(i) = newNode;
         }
 
         //Set first vertex to be 0
         values[0] = 0;        
         Node* newNode = pairHeap->insert(0, 0);
         nodeArray[0] = newNode;
+
         while(!pairHeap->isEmpty()){
             if(metrics) metrics->startExtractMin();
-            newNode = pairHeap->extractMin(); //Pulls min from heap
+            Node* minNode = pairHeap->extractMin(); //Pulls min from heap
             if(metrics) metrics->stopExtractMin();
-            nodeArray[newNode->vertex] = nullptr;
-            GraphNode* search = graph->array[newNode->vertex].first; //sets search as the first node in the minNode's adj list
+            int minNum = minNode->vertex;
+            nodeArray.at(minNum) = nullptr;
+            GraphNode* search = graph->array.at(minNum).first; //sets search as the first node in the minNode's adj list
 
             while(search != nullptr){
-                int destination = search->dest;
+                int dest = search->dest;
                 //If note extracted yet(if pointer in array = nullptr), 
-                if(nodeArray[destination] != nullptr && search->weight < values[destination]){
-                    values[destination] = search->weight; //set value to new value
-                    final[destination] = newNode->vertex;  //set that destination will connect to vertex ( [i] -> v)
+                if(nodeArray.at(dest) != nullptr && search->weight < values.at(dest)){
+                    values.at(dest) = search->weight; //set value to new value
+                    final.at(dest) = minNum;  //set that destination will connect to vertex ( [i] -> v)
                     if(metrics) metrics->startDecreaseKey();
-                    pairHeap->decreaseKey(nodeArray[destination], search->weight); //update key of pairing heap node
+                    pairHeap->decreaseKey(nodeArray.at(dest), search->weight); //update key of pairing heap node
                     if(metrics) metrics->stopDecreaseKey();
-                }
-                if(search->next != nullptr){
                 }
                 search = search->next;
             }

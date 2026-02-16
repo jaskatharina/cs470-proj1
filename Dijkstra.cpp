@@ -58,6 +58,94 @@ public:
     }
 };
 
+//ds - choice of data structure, "fibonacci" or "pairing", otherwise error
+void Dijkstra(Graph* graph, int source, string ds, Metrics* metrics = nullptr) {
+    int vert = graph->vertices;
+    vector<int> values; //hold values for comparison
+    values.resize(vert);
+
+    if(ds == "fibonacci") {
+        vector<FibNode*> nodeArray;
+        nodeArray.resize(vert);
+        FibonacciHeap* fibHeap = new FibonacciHeap;
+
+        for(int i = 0; i < vert; i++){
+            values.at(i) = INT_MAX;
+            nodeArray.at(i) = fibHeap->insert(INT_MAX, i);
+        }
+
+        //set values for source node to be zero
+        fibHeap->decreaseKey(nodeArray.at(source), 0);
+        values.at(source) = 0;
+
+        while (!(fibHeap->isEmpty())){
+            if(metrics) metrics->startExtractMin();
+            FibNode* minNode = fibHeap->extractMin();
+            if(metrics) metrics->stopExtractMin();
+            int minNum = minNode->num;
+            GraphNode* search = graph->array.at(minNum).first;
+
+            //travels though connected list
+            while(search != nullptr){
+                int dest = search->dest;
+
+                //if not extracted and if value through minNode is less than current value, update current value
+                if(nodeArray.at(dest) != nullptr && values.at(minNum) != INT_MAX && (search->weight + values.at(minNum)) < values.at(dest)){
+                    values.at(dest) = values.at(minNum) + search->weight;
+                    if(metrics) metrics->startDecreaseKey();
+                    fibHeap->decreaseKey(nodeArray.at(dest), values.at(dest));
+                    if(metrics) metrics->stopDecreaseKey();
+                }
+                
+                search = search->next;
+            }
+        }
+
+        // for(int i = 0; i < vert; i++){
+        //     cout << i << " distance from source: " << values.at(i) << endl;
+        // }
+    }
+    else if(ds == "pairing") {
+        vector<Node*> nodeArray;//array of nodes
+        nodeArray.resize(vert);
+        PairingHeap* pairHeap = new PairingHeap;
+
+            //fill arrays and heap
+        for (int i = 0; i < vert; i++){
+            values[i] = INT_MAX; //should be int_max
+            nodeArray.at(i) = pairHeap->insert(INT_MAX, i);
+        }
+
+        
+        pairHeap->decreaseKey(nodeArray.at(source), 0);
+        values.at(source) = 0;
+
+        while(!(pairHeap->isEmpty())){
+            if(metrics) metrics->startExtractMin();
+            Node* minNode = pairHeap->extractMin();
+            if(metrics) metrics->stopExtractMin();
+            int minNum = minNode->vertex;
+            GraphNode* search = graph->array[minNode->vertex].first;
+
+            while(search != nullptr){
+                int dest = search->dest;
+
+                if(nodeArray.at(dest) != nullptr && values.at(minNum) != INT_MAX && (search->weight + values.at(minNum)) < values.at(dest) ){
+                    values.at(dest) = values.at(minNum) + search->weight;
+                    if(metrics) metrics->startDecreaseKey();
+                    pairHeap->decreaseKey(nodeArray.at(dest), values.at(dest));
+                    if(metrics) metrics->stopDecreaseKey();
+                }
+                search = search->next;
+            }
+        }
+    }
+    else {
+        cout << "invalid value of ds, try again with \"fibonacci\" or \"pairing\"" << endl;
+        return;
+    }
+}
+
 void DijkstraPairing(Graph* graph, int source, Metrics* metrics = nullptr){
     int vert = graph->vertices;
     vector<int> values; //hold values for comparison
@@ -221,7 +309,9 @@ int main() {
 
                 // Fibonacci Heap
                 metrics.startRun();
-                DijkstraFib(newGraph, 0, &metrics);
+                //DijkstraFib(newGraph, 0, &metrics);
+                Dijkstra(newGraph, 0, "fibonacci", &metrics);
+
                 metrics.stopRun();
 
                 fib_total[r] = metrics.totalRunTime();
@@ -232,7 +322,10 @@ int main() {
 
                 // Pairing Heap
                 metrics.startRun();
-                DijkstraPairing(newGraph, 0, &metrics);
+                //DijkstraPairing(newGraph, 0, &metrics);
+                Dijkstra(newGraph, 0, "pairing", &metrics);
+
+
                 metrics.stopRun();
 
                 pair_total[r] = metrics.totalRunTime();
